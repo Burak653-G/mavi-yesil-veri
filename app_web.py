@@ -96,7 +96,16 @@ with col_sol:
     for _, row in df_filtrelenmis.iterrows():
         if 'enlem' in row and 'boylam' in row:
             renk = 'blue' if str(row.get('tur', '')).lower() == 'mavi' else 'green'
-            popup_text = f"<b>İstasyon:</b> {row.get('ad', 'Bilinmiyor')}<br><b>Tür:</b> {row.get('tur', 'Belirtilmedi')}"
+            
+            # İstasyon adı için olası tüm sütun isimlerini kontrol et
+            istasyon_adi = "Sinop İstasyonu"
+            for col_name in ['ad', 'isim', 'adi', 'station', 'istasyon_adi']:
+                if col_name in row and pd.notna(row[col_name]):
+                    istasyon_adi = row[col_name]
+                    break
+                    
+            popup_text = f"<b>İstasyon:</b> {istasyon_adi}<br><b>Tür:</b> {row.get('tur', 'Belirtilmedi')}"
+            
             folium.Marker(
                 location=[row['enlem'], row['boylam']],
                 popup=popup_text,
