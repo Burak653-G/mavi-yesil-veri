@@ -83,14 +83,14 @@ st.sidebar.markdown("---")
 st.sidebar.markdown(f"### {t['canli_baslik']}")
 canli_mod = st.sidebar.checkbox("🟢 Canlı Akışı Başlat / Start Stream", value=False)
 
-# --- CSS STİLLERİ ---
+# --- CSS STİLLERİ (Yazı rengi düzeltilmiş yapay zeka kutusu dahil) ---
 st.markdown("""
     <style>
         .main-header { font-size: 2.2rem; color: #0e4e8a; font-weight: 700; }
         .sub-header { font-size: 1.1rem; color: #555555; margin-bottom: 20px; }
         .kpi-card { background-color: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 5px solid #0e4e8a; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
         .alert-box { background-color: #ffcccc; padding: 10px; border-radius: 8px; border-left: 5px solid #ff4d4d; color: #990000; font-weight: bold; margin-bottom: 15px; }
-        .ai-box { background-color: #e6f2ff; padding: 15px; border-radius: 10px; border-left: 5px solid #0e4e8a; margin-bottom: 15px; }
+        .ai-box { background-color: #e6f2ff; padding: 15px; border-radius: 10px; border-left: 5px solid #0e4e8a; margin-bottom: 15px; color: #003366; font-weight: 600; }
         .live-badge { background-color: #d4edda; color: #155724; padding: 8px 12px; border-radius: 5px; font-weight: bold; margin-bottom: 15px; border-left: 5px solid #28a745; }
     </style>
 """, unsafe_allow_html=True)
