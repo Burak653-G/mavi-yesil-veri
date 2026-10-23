@@ -26,7 +26,8 @@ st.markdown("""
 
 # --- VERİ YÜKLEME ---
 @st.cache_data
-data_yukle = lambda: pd.read_csv("veri.csv")
+def data_yukle():
+    return pd.read_csv("veri.csv")
 
 try:
     df = data_yukle()
@@ -56,13 +57,11 @@ with col4:
 st.divider()
 
 # --- AKILLI ANOMALİ & UYARI MEKANİZMASI ---
-# (Eğer veri setinde değer/kirlilik sütunu varsa eşik kontrolü yapar)
 if 'deger' in df.columns:
     kritik_sinir = df['deger'].quantile(0.90)
     anomaliler = df[df['deger'] > kritik_sinir]
-    if not anomalies_aktif := not anomaliler.empty:
-        pass
-    st.markdown(f'<div class="alert-box">🚨 <b>Akıllı Uyarı Sistemi:</b> {len(anomaliler)} istasyonda eşik değer aşımı (anomali) tespit edildi. Bölgesel inceleme önerilir.</div>', unsafe_allow_html=True)
+    if not anomaliler.empty:
+        st.markdown(f'<div class="alert-box">🚨 <b>Akıllı Uyarı Sistemi:</b> {len(anomaliler)} istasyonda eşik değer aşımı (anomali) tespit edildi. Bölgesel inceleme önerilir.</div>', unsafe_allow_html=True)
 
 # --- YAN PANEL: FİLTRELEME ---
 st.sidebar.header("🎛️ Veri Filtreleme Paneli")
@@ -82,11 +81,9 @@ col_sol, col_sag = st.columns([1.3, 1])
 with col_sol:
     st.subheader("🗺️ Coğrafi İstasyon Haritası")
     
-    # Harita Merkezi (Sinop)
     sinop_merkez = [42.0282, 35.1517]
     m = folium.Map(location=sinop_merkez, zoom_start=10, tiles=None)
     
-    # Katmanlar
     folium.TileLayer('OpenStreetMap', name='OpenStreetMap').add_to(m)
     folium.TileLayer(
         tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -124,7 +121,6 @@ if 'tarih' in df.columns and 'deger' in df.columns:
     fig_line = px.line(df, x='tarih', y='deger', color='tur' if 'tur' in df.columns else None, title="Parametrelerin Zaman İçindeki Değişim Eğilimi")
     st.plotly_chart(fig_line, use_container_width=True)
 else:
-    # Örnek simüle edilmiş zaman serisi trendi (veri setinde tarih sütunu yoksa estetik gösterim için)
     tarih_ornek = pd.date_range(start="2026-01-01", periods=10, freq="D")
     df_trend = pd.DataFrame({"Tarih": tarih_ornek, "Değer": [20, 24, 19, 28, 35, 30, 25, 22, 29, 32], "Parametre": "Genel Çevre Kalite İndeksi"})
     fig_trend = px.line(df_trend, x="Tarih", y="Değer", markers=True, title="Çevresel Kalite İndeksi Eğilim Analizi (Simüle Edilmiş Trend)")
