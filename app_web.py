@@ -31,7 +31,7 @@ DIL = {
         "tur_filtre": "İstasyon Türüne Göre Filtrele:",
         "tumu": "Tümü",
         "harita_baslik": "🗺️ Coğrafi İstasyon Haritası",
-        "grafik_baslik": "📊 İstasyon Dağılım Özet Grafiki",
+        "grafik_baslik": "📊 İstasyon Dağılım Özet Grafiği",
         "ai_baslik": "🤖 Yapay Zeka ile Gelecek Dönem Çevre Kalitesi Tahmini",
         "ai_aciklama": "Geçmiş verilerin trend eğilimi analize alınarak makine öğrenmesi modeli (Linear Regression) ile gelecek dönem parametre projeksiyonu çıkarılmıştır.",
         "rapor_baslik": "📋 Kurumsal Raporlama ve Dışa Aktarım",
@@ -127,7 +127,7 @@ if 'tur' in df.columns:
 else:
     df_filtrelenmis = df
 
-# --- ANA GÖVDE: HARİta VE GRAFİK ---
+# --- ANA GÖVDE: HARİTA VE GRAFİK ---
 col_sol, col_sag = st.columns([1.3, 1])
 
 with col_sol:
@@ -176,9 +176,8 @@ st.markdown(f"### {t['ai_baslik']}")
 st.markdown(f'<div class="ai-box">{t["ai_aciklama"]}</div>', unsafe_allow_html=True)
 
 try:
-    # Basit bir ML lineer regresyon simülasyon projeksiyonu
     x_vals = np.array(range(10)).reshape(-1, 1)
-    y_vals = np.array([22, 24, 23, 26, 29, 28, 31, 33, 32, 35]) # Örnek zaman serisi eğilimi
+    y_vals = np.array([22, 24, 23, 26, 29, 28, 31, 33, 32, 35])
     model = LinearRegression()
     model.fit(x_vals, y_vals)
     
@@ -188,7 +187,7 @@ try:
     df_ai = pd.DataFrame({
         "Zaman Adımı": ["T-4", "T-3", "T-2", "T-1", "Şimdi", "Tahmin +1", "Tahmin +2", "Tahmin +3", "Tahmin +4", "Tahmin +5"],
         "Değer": list(y_vals[-5:]) + list(future_y),
-        Türü": ["Gerçek Veri"]*5 + ["Yapay Zeka Projeksiyonu"]*5
+        "Türü": ["Gerçek Veri"]*5 + ["Yapay Zeka Projeksiyonu"]*5
     })
     
     fig_ai = px.line(df_ai, x="Zaman Adımı", y="Değer", color="Türü", markers=True, title="Çevresel Parametre Gelecek Projeksiyonu (ML Model)")
