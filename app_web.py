@@ -8,6 +8,7 @@ import datetime
 from sklearn.linear_model import LinearRegression
 import numpy as np
 import io
+import time
 
 # ReportLab kütüphaneleri (PDF üretimi için)
 from reportlab.lib.pagesizes import letter
@@ -41,6 +42,8 @@ DIL = {
         "grafik_baslik": "📊 İstasyon Dağılım Özet Grafiği",
         "ai_baslik": "🤖 Yapay Zeka ile Gelecek Dönem Çevre Kalitesi Tahmini",
         "ai_aciklama": "Geçmiş verilerin trend eğilimi analize alınarak makine öğrenmesi modeli (Linear Regression) ile gelecek dönem parametre projeksiyonu çıkarılmıştır.",
+        "canli_baslik": "🔴 Canlı IoT Sensör Akış Simülasyonu",
+        "canli_aciklama": "Saha sensörlerinden gelen anlık akış simüle edilmektedir.",
         "rapor_baslik": "📋 Kurumsal Raporlama ve Dışa Aktarım",
         "rapor_aciklama": "Filtrelenmiş tüm anlık verileri ve yapay zeka analiz sonuçlarını resmi jüri veya rektörlük sunumları için CSV veya Resmi PDF Raporu olarak indirebilirsiniz.",
         "csv_buton": "📥 CSV Raporu İndir",
@@ -62,6 +65,8 @@ DIL = {
         "grafik_baslik": "📊 Station Distribution Summary",
         "ai_baslik": "🤖 AI-Powered Future Environmental Quality Prediction",
         "ai_aciklama": "Future parameter projection is generated using a machine learning model (Linear Regression) based on historical trend analysis.",
+        "canli_baslik": "🔴 Live IoT Sensor Stream Simulation",
+        "canli_aciklama": "Real-time stream simulation from field sensors is active.",
         "rapor_baslik": "📋 Corporate Reporting & Export",
         "rapor_aciklama": "Download filtered real-time data and AI analysis results as CSV or official PDF reports for jury or rectorate presentations.",
         "csv_buton": "📥 Download CSV Report",
@@ -69,10 +74,14 @@ DIL = {
     }
 }
 
-# --- YAN PANEL: DİL SEÇİMİ ---
+# --- YAN PANEL: DİL VE CANLI AKIŞ SEÇENEKLERİ ---
 st.sidebar.markdown("### 🌐 Tercihler")
 secilen_dil = st.sidebar.selectbox("Dil / Language", ["Türkçe", "English"])
 t = DIL[secilen_dil]
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"### {t['canli_baslik']}")
+canli_mod = st.sidebar.checkbox("🟢 Canlı Akışı Başlat / Start Stream", value=False)
 
 # --- CSS STİLLERİ ---
 st.markdown("""
@@ -82,6 +91,7 @@ st.markdown("""
         .kpi-card { background-color: #f8f9fa; padding: 15px; border-radius: 10px; border-left: 5px solid #0e4e8a; box-shadow: 2px 2px 5px rgba(0,0,0,0.05); }
         .alert-box { background-color: #ffcccc; padding: 10px; border-radius: 8px; border-left: 5px solid #ff4d4d; color: #990000; font-weight: bold; margin-bottom: 15px; }
         .ai-box { background-color: #e6f2ff; padding: 15px; border-radius: 10px; border-left: 5px solid #0e4e8a; margin-bottom: 15px; }
+        .live-badge { background-color: #d4edda; color: #155724; padding: 8px 12px; border-radius: 5px; font-weight: bold; margin-bottom: 15px; border-left: 5px solid #28a745; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -96,6 +106,11 @@ except Exception as e:
     st.error(f"Veri yüklenirken hata oluştu: {e}")
     st.stop()
 
+# Canlı mod aktifse değerlere hafif simüle edilmiş dalgalanma ekleyelim
+if canli_mod and 'deger' in df.columns:
+    np.random.seed(int(time.time() % 100))
+    df['deger'] = df['deger'] + np.random.uniform(-1.5, 1.5, size=len(df))
+
 # --- PDF ÜRETİCİ FONKSİYON ---
 def pdf_olustur(df_filtrelenmis):
     buffer = io.BytesIO()
@@ -103,7 +118,6 @@ def pdf_olustur(df_filtrelenmis):
     elements = []
     styles = getSampleStyleSheet()
     
-    # Başlık Stili
     baslik_stili = ParagraphStyle(
         'BaslikStili',
         parent=styles['Heading1'],
@@ -116,7 +130,6 @@ def pdf_olustur(df_filtrelenmis):
     elements.append(Paragraph(f"Rapor Tarihi: {datetime.date.today()}", styles['Normal']))
     elements.append(Spacer(1, 15))
     
-    # Tablo verileri
     sutunlar = list(df_filtrelenmis.columns)
     tablo_verisi = [sutunlar]
     for _, row in df_filtrelenmis.iterrows():
@@ -143,6 +156,9 @@ def pdf_olustur(df_filtrelenmis):
 # --- BAŞLIK & AÇIKLAMA ---
 st.markdown(f'<p class="main-header">{t["baslik"]}</p>', unsafe_allow_html=True)
 st.markdown(f'<p class="sub-header">{t["alt_baslik"]}</p>', unsafe_allow_html=True)
+
+if canli_mod:
+    st.markdown(f'<div class="live-badge">🟢 {t["canli_baslik"]} - IoT Sensör Verileri Akıyor...</div>', unsafe_allow_html=True)
 
 # --- YÖNETİCİ ÖZET KARTLARI (KPI) ---
 col1, col2, col3, col4 = st.columns(4)
@@ -178,7 +194,7 @@ if 'tur' in df.columns:
     else:
         df_filtrelenmis = df
 else:
-        df_filtrelenmis = df
+    df_filtrelenmis = df
 
 # --- ANA GÖVDE: HARİTA VE GRAFİK ---
 col_sol, col_sag = st.columns([1.3, 1])
@@ -205,7 +221,8 @@ with col_sol:
                 if col_name in row and pd.notna(row[col_name]):
                     istasyon_adi = row[col_name]
                     break
-            popup_text = f"<b>Station:</b> {istasyon_adi}<br><b>Type:</b> {row.get('tur', 'N/A')}"
+            deger_bilgi = f"<br><b>Değer:</b> {row.get('deger', 'N/A')}" if 'deger' in row else ""
+            popup_text = f"<b>Station:</b> {istasyon_adi}<br><b>Type:</b> {row.get('tur', 'N/A')}{deger_bilgi}"
             folium.Marker(
                 location=[row['enlem'], row['boylam']],
                 popup=popup_text,
