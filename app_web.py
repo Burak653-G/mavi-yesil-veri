@@ -7,6 +7,13 @@ import plotly.express as px
 import datetime
 from sklearn.linear_model import LinearRegression
 import numpy as np
+import io
+
+# ReportLab kütüphaneleri (PDF üretimi için)
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
 
 # --- SAYFA YAPILANDIRMASI ---
 st.set_page_config(
@@ -35,8 +42,9 @@ DIL = {
         "ai_baslik": "🤖 Yapay Zeka ile Gelecek Dönem Çevre Kalitesi Tahmini",
         "ai_aciklama": "Geçmiş verilerin trend eğilimi analize alınarak makine öğrenmesi modeli (Linear Regression) ile gelecek dönem parametre projeksiyonu çıkarılmıştır.",
         "rapor_baslik": "📋 Kurumsal Raporlama ve Dışa Aktarım",
-        "rapor_aciklama": "Filtrelenmiş tüm anlık verileri ve yapay zeka analiz sonuçlarını resmi jüri veya rektörlük sunumları için indirebilirsiniz.",
-        "rapor_buton": "📥 Resmi Raporu İndir (CSV)"
+        "rapor_aciklama": "Filtrelenmiş tüm anlık verileri ve yapay zeka analiz sonuçlarını resmi jüri veya rektörlük sunumları için CSV veya Resmi PDF Raporu olarak indirebilirsiniz.",
+        "csv_buton": "📥 CSV Raporu İndir",
+        "pdf_buton": "📄 Resmi PDF Raporu İndir"
     },
     "English": {
         "baslik": "🌊 Sinop Blue & Green Data Monitoring Platform",
@@ -55,8 +63,9 @@ DIL = {
         "ai_baslik": "🤖 AI-Powered Future Environmental Quality Prediction",
         "ai_aciklama": "Future parameter projection is generated using a machine learning model (Linear Regression) based on historical trend analysis.",
         "rapor_baslik": "📋 Corporate Reporting & Export",
-        "rapor_aciklama": "Download filtered real-time data and AI analysis results for official jury or rectorate presentations.",
-        "rapor_buton": "📥 Download Official Report (CSV)"
+        "rapor_aciklama": "Download filtered real-time data and AI analysis results as CSV or official PDF reports for jury or rectorate presentations.",
+        "csv_buton": "📥 Download CSV Report",
+        "pdf_buton": "📄 Download Official PDF Report"
     }
 }
 
@@ -86,6 +95,50 @@ try:
 except Exception as e:
     st.error(f"Veri yüklenirken hata oluştu: {e}")
     st.stop()
+
+# --- PDF ÜRETİCİ FONKSİYON ---
+def pdf_olustur(df_filtrelenmis):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter)
+    elements = []
+    styles = getSampleStyleSheet()
+    
+    # Başlık Stili
+    baslik_stili = ParagraphStyle(
+        'BaslikStili',
+        parent=styles['Heading1'],
+        fontSize=16,
+        textColor=colors.HexColor('#0e4e8a'),
+        spaceAfter=15
+    )
+    
+    elements.append(Paragraph("Sinop Mavi & Yeşil - Resmi Kurumsal Durum Raporu", baslik_stili))
+    elements.append(Paragraph(f"Rapor Tarihi: {datetime.date.today()}", styles['Normal']))
+    elements.append(Spacer(1, 15))
+    
+    # Tablo verileri
+    sutunlar = list(df_filtrelenmis.columns)
+    tablo_verisi = [sutunlar]
+    for _, row in df_filtrelenmis.iterrows():
+        tablo_verisi.append([str(val) for val in row.values])
+        
+    t = Table(tablo_verisi)
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor('#0e4e8a')),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,0), 9),
+        ('BOTTOMPADDING', (0,0), (-1,0), 6),
+        ('BACKGROUND', (0,1), (-1,-1), colors.HexColor('#f8f9fa')),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+        ('FONTSIZE', (0,1), (-1,-1), 8),
+    ]))
+    
+    elements.append(t)
+    doc.build(elements)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 # --- BAŞLIK & AÇIKLAMA ---
 st.markdown(f'<p class="main-header">{t["baslik"]}</p>', unsafe_allow_html=True)
@@ -125,7 +178,7 @@ if 'tur' in df.columns:
     else:
         df_filtrelenmis = df
 else:
-    df_filtrelenmis = df
+        df_filtrelenmis = df
 
 # --- ANA GÖVDE: HARİTA VE GRAFİK ---
 col_sol, col_sag = st.columns([1.3, 1])
@@ -195,17 +248,28 @@ try:
 except Exception as e:
     st.info("Yapay zeka modeli grafiği yüklenirken simülasyon verisi kullanıldı.")
 
-# --- KURUMSAL RAPORLAMA ---
+# --- KURUMSAL RAPORLAMA VE İNDİRME ---
 st.divider()
-col_rapor1, col_rapor2 = st.columns([3, 1])
+col_rapor1, col_rapor2, col_rapor3 = st.columns([2, 1, 1])
+
 with col_rapor1:
     st.markdown(f"### {t['rapor_baslik']}")
     st.write(t['rapor_aciklama'])
+
 with col_rapor2:
     csv_verisi = df_filtrelenmis.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label=t['rapor_buton'],
+        label=t['csv_buton'],
         data=csv_verisi,
-        file_name=f"sinop_mavi_yesil_ai_rapor_{datetime.date.today()}.csv",
+        file_name=f"sinop_mavi_yesil_rapor_{datetime.date.today()}.csv",
         mime='text/csv',
+    )
+
+with col_rapor3:
+    pdf_verisi = pdf_olustur(df_filtrelenmis)
+    st.download_button(
+        label=t['pdf_buton'],
+        data=pdf_verisi,
+        file_name=f"sinop_mavi_yesil_kurumsal_rapor_{datetime.date.today()}.pdf",
+        mime='application/pdf',
     )
