@@ -1,5 +1,7 @@
 streamlit
-folium
 pandas
+folium
 streamlit-folium
 plotly
+scikit-learn
+reportlab
